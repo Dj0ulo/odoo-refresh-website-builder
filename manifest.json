@@ -1,0 +1,12 @@
+{
+  "name": "Odoo Redirect",
+  "version": "1.0",
+  "manifest_version": 3,
+  "action": {
+    "default_title": "Odoo Redirect"
+  },
+  "permissions": ["activeTab", "scripting", "tabs"],
+  "background": {
+    "service_worker": "background.js"
+  }
+}
