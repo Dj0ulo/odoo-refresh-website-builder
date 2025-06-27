@@ -8,5 +8,13 @@
   "permissions": ["activeTab", "scripting", "tabs"],
   "background": {
     "service_worker": "background.js"
+  },
+  "commands": {
+    "toggle-feature": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+E"
+      },
+      "description": "Run Odoo Redirect"
+    }
   }
 }

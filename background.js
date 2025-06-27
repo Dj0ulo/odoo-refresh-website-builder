@@ -1,4 +1,4 @@
-chrome.action.onClicked.addListener((tab) => {
+const runOdooRedirect = (tab) => {
   // First, try to click the edit button on the current page.
   chrome.scripting.executeScript({
     target: {tabId: tab.id},
@@ -47,4 +47,14 @@ chrome.action.onClicked.addListener((tab) => {
       chrome.tabs.update(tab.id, {url: new URL(tab.url).origin + "/odoo/action-website.website_preview"});
     }
   });
+};
+
+chrome.action.onClicked.addListener((tab) => {
+  runOdooRedirect(tab);
+});
+
+chrome.commands.onCommand.addListener((command, tab) => {
+  if (command === "toggle-feature") {
+    runOdooRedirect(tab);
+  }
 });
