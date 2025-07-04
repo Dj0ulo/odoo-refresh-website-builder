@@ -3,9 +3,11 @@
   "version": "1.0",
   "manifest_version": 3,
   "action": {
-    "default_title": "Odoo Redirect"
+    "default_title": "Odoo Redirect",
+    "default_icon": "icons/grey.png"
   },
   "permissions": ["activeTab", "scripting", "tabs"],
+  "host_permissions": ["http://localhost:*/", "http://127.0.0.1:*/"],
   "background": {
     "service_worker": "background.js"
   },
@@ -16,5 +18,10 @@
       },
       "description": "Run Odoo Redirect"
     }
+  },
+  "icons": {
+    "16": "icons/purple.png",
+    "48": "icons/purple.png",
+    "128": "icons/purple.png"
   }
 }
