@@ -1,18 +1,8 @@
-const getDebugMode = async (tabId) => {
+const executeScript = async (tabId, func) => {
   try {
     const injectionResults = await chrome.scripting.executeScript({
       target: {tabId: tabId},
-      func: () => {
-        const scriptElement = document.head.querySelector('script[id="web.layout.odooscript"]');
-        if (scriptElement) {
-          const scriptContent = scriptElement.innerHTML;
-          const match = scriptContent.match(/debug: "([^"]*)"/);
-          if (match) {
-            return match[1];
-          }
-        }
-        return null;
-      }
+      func: func,
     });
     if (chrome.runtime.lastError) {
       console.error(chrome.runtime.lastError);
@@ -20,84 +10,84 @@ const getDebugMode = async (tabId) => {
     }
     return injectionResults[0].result;
   } catch (error) {
-    console.error(`Error getting debug mode for tab ${tabId}:`, error);
+    console.error(`Error executing script for tab ${tabId}:`, error);
     return null;
   }
 };
 
-const checkAndClickEditButton = async (tabId) => {
-  const injectionResults = await chrome.scripting.executeScript({
-    target: {tabId: tabId},
-    func: () => {
-      const editButton = document.querySelector('.o_edit_website_container > :first-child');
-      const saveButton = document.querySelector('[data-action=save]');
-      if (editButton && !saveButton) {
-        editButton.click();
-        return true;
+const getDebugMode = (tabId) => {
+  return executeScript(tabId, () => {
+    const scriptElement = document.head.querySelector('script[id="web.layout.odooscript"]');
+    if (scriptElement) {
+      const scriptContent = scriptElement.innerHTML;
+      const match = scriptContent.match(/debug: "([^"]*)"/);
+      if (match) {
+        return match[1];
       }
-      return false;
     }
+    return null;
   });
-  return injectionResults[0].result;
+};
+
+const checkAndClickEditButton = (tabId) => {
+  return executeScript(tabId, () => {
+    const editButton = document.querySelector('.o_edit_website_container > :first-child');
+    const saveButton = document.querySelector('[data-action=save]');
+    if (editButton && !saveButton) {
+      editButton.click();
+      return true;
+    }
+    return false;
+  });
 };
 
 const waitForEditButtonAndClick = (tabId) => {
-  chrome.scripting.executeScript({
-    target: {tabId: tabId},
-    func: () => {
-      const observer = new MutationObserver((mutationsList, observer) => {
-        for(const mutation of mutationsList) {
-          if (mutation.type === 'childList') {
-            const editButton = document.querySelector('.o_edit_website_container > :first-child');
-            if (editButton) {
-              editButton.click();
-              observer.disconnect();
-              return;
-            }
+  return executeScript(tabId, () => {
+    const observer = new MutationObserver((mutationsList, observer) => {
+      for(const mutation of mutationsList) {
+        if (mutation.type === 'childList') {
+          const editButton = document.querySelector('.o_edit_website_container > :first-child');
+          if (editButton) {
+            editButton.click();
+            observer.disconnect();
+            return;
           }
         }
-      });
-      observer.observe(document.body, { childList: true, subtree: true });
-    }
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
   });
 };
 
-const performRpcCall = async (tabId) => {
-  try {
-    await chrome.scripting.executeScript({
-      target: {tabId: tabId},
-      func: () => {
-        return fetch(window.location.origin + '/web/dataset/call_kw/ir.attachment/regenerate_assets_bundles',
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              jsonrpc: '2.0',
-              method: 'call',
-              params: {
-                model: 'ir.attachment',
-                method: 'regenerate_assets_bundles',
-                args: [],
-                kwargs: {},
-              },
-            }),
-          }
-        ).then(response => response.json())
-         .then(data => {
-            console.log('RPC call result:', data);
-            return data;
-         })
-         .catch(error => {
-            console.error('Error during RPC call:', error);
-            throw error;
-         });
-      },
-    });
-  } catch (error) {
-    console.error('Error injecting script or during RPC call:', error);
-  }
+const performRpcCall = (tabId) => {
+  return executeScript(tabId, () => {
+    return fetch(window.location.origin + '/web/dataset/call_kw/ir.attachment/regenerate_assets_bundles',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          method: 'call',
+          params: {
+            model: 'ir.attachment',
+            method: 'regenerate_assets_bundles',
+            args: [],
+            kwargs: {},
+          },
+        }),
+      }
+    ).then(response => response.json())
+     .then(data => {
+        console.log('RPC call result:', data);
+        return data;
+     })
+     .catch(error => {
+        console.error('Error during RPC call:', error);
+        throw error;
+     });
+  });
 };
 
 const redirectToPreviewPage = (tabId, originalUrl) => {
