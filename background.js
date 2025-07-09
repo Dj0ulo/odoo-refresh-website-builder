@@ -29,17 +29,6 @@ const getDebugMode = (tabId) => {
   });
 };
 
-const checkAndClickEditButton = (tabId) => {
-  return executeScript(tabId, () => {
-    const editButton = document.querySelector('.o_edit_website_container > :first-child');
-    const saveButton = document.querySelector('[data-action=save]');
-    if (editButton && !saveButton) {
-      editButton.click();
-      return true;
-    }
-    return false;
-  });
-};
 
 const waitForEditButtonAndClick = (tabId) => {
   return executeScript(tabId, () => {
@@ -95,22 +84,19 @@ const redirectToPreviewPage = (tabId, originalUrl) => {
 };
 
 const runOdooRedirect = async (tab) => {
-  const clicked = await checkAndClickEditButton(tab.id);
-  if (!clicked) {
-    const listener = (tabId, changeInfo, updatedTab) => {
-      if (tabId === tab.id && changeInfo.status === 'complete' && updatedTab.url.includes('/odoo/action-website.website_preview')) {
-        waitForEditButtonAndClick(tabId);
-        chrome.tabs.onUpdated.removeListener(listener);
-      }
-    };
-    chrome.tabs.onUpdated.addListener(listener);
-
-    const debugMode = await getDebugMode(tab.id);
-    if (debugMode !== 'assets') {
-      await performRpcCall(tab.id);
+  const listener = (tabId, changeInfo, updatedTab) => {
+    if (tabId === tab.id && changeInfo.status === 'complete' && updatedTab.url.includes('/odoo/action-website.website_preview')) {
+      waitForEditButtonAndClick(tabId);
+      chrome.tabs.onUpdated.removeListener(listener);
     }
-    redirectToPreviewPage(tab.id, tab.url);
+  };
+  chrome.tabs.onUpdated.addListener(listener);
+
+  const debugMode = await getDebugMode(tab.id);
+  if (debugMode !== 'assets') {
+    await performRpcCall(tab.id);
   }
+  redirectToPreviewPage(tab.id, tab.url);
 };
 
 const updateIcon = async (tabId) => {
